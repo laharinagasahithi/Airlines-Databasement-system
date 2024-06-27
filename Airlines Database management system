@@ -1,0 +1,399 @@
+- - 1 TABLE NAME : passenger
+CREATE TABLE passenger(
+PassengerID NUMBER,
+First VARCHAR(20) NOT NULL,
+Middle VARCHAR (20) NOT NULL,
+Last VARCHAR(20) NOT NULL,
+Gender CHAR (1) NOT NULL,
+Phone NUMBER NOT NULL,
+Email VARCHAR(50) NOT NULL,
+PassengerType VARCHAR(20),
+PRIMARY KEY (PassengerID));
+- - 2 TABLE NAME : agency_discount
+CREATE TABLE agency_discount(
+AgencyDiscountCode NUMBER,
+AgencyDiscountAmount DECIMAL(8,2) NOT NULL,
+PRIMARY KEY (AgencyDiscountCode));
+- - 3 TABLE NAME : travel_agency
+CREATE TABLE travel_agency(
+TPassengerID NUMBER,
+TravelAgencyID NUMBER NOT NULL,
+TravelAgencyName VARCHAR(50) NOT NULL,
+AgencyAddress VARCHAR(50) NOT NULL,
+AgencyPhone NUMBER NOT NULL,
+BookingAgentName VARCHAR(50) NOT NULL,
+AgencyDiscountCode NUMBER NOT NULL,
+PRIMARY KEY (TPassengerID),
+FOREIGN KEY (AgencyDiscountCode) REFERENCES agency_discount (AgencyDiscountCode));
+- - 4 TABLE NAME : travel_class
+CREATE TABLE travel_class(
+TravelClassID NUMBER,
+TravelClass CHAR(20) NOT NULL,
+PRIMARY KEY(TravelClassID));
+- - 5 TABLE NAME : reservation_status
+CREATE TABLE reservation_status(
+ReservationStatusID NUMBER,
+ReservationStatus VARCHAR (20) NOT NULL,
+PRIMARY KEY (ReservationStatusID));
+- - 6 TABLE NAME : airline
+CREATE TABLE airline(
+AirlineCode CHAR(10),
+AirlineName VARCHAR(50) NOT NULL,
+HeadquartersAddress VARCHAR(50) NOT NULL,
+PRIMARY KEY (AirlineCode));
+- - 7 TABLE NAME : flight
+CREATE TABLE flight(
+FlightNumber CHAR(10),
+Destination VARCHAR(50) NOT NULL,
+FlightDate DATE NOT NULL,
+DepartureTime TIMESTAMP(0) NOT NULL,
+ArrivalTime TIMESTAMP(0) NOT NULL,
+FlightTime TIMESTAMP(8) NOT NULL,
+AirlineCode CHAR(10),
+PRIMARY KEY (FlightNumber),
+FOREIGN KEY (AirlineCode) REFERENCES airline (AirlineCode) );
+- - 8 TABLE NAME : reservation
+CREATE TABLE reservation(
+ReservationID NUMBER,
+PassengerID NUMBER NOT NULL,
+FlightNumber CHAR(1) NOT NULL,
+ReservationDate DATE NOT NULL,
+SeatNumber CHAR(4) NOT NULL,
+Cost DECIMAL(8,2) NOT NULL,
+TravelClassID NUMBER NOT NULL,
+ReservationStatusID NUMBER NOT NULL,
+PRIMARY KEY (ReservationID),
+FOREIGN KEY (PassengerID) REFERENCES passenger (PassengerID),
+FOREIGN KEY (FlightNumber) REFERENCES flight (FlightNumber),
+FOREIGN KEY(TravelClassID) REFERENCES travel_class (TravelClassID),
+FOREIGN KEY (ReservationStatusID) REFERENCES reservation_status (ReservationStatusID));
+FETCHING RECORDS FROM SINGLE TABLE
+- - display passenger table
+SELECT * FROM passenger;
+- - display name of airlines and headquarters from airline table
+SELECT AirlineName, HeadquartersAddress FROM airline;
+- - display first name of passengers whose first name contains ‘y’ as second letter
+SELECT First
+FROM passenger
+WHERE First LIKE ‘__y%’;
+- - display the details of airline with the code ‘MO787878’
+SELECT *
+FROM airline
+WHERE AirlineCode= ‘MO787878’;
+- - display the details of passengers whose first name ends with letter ‘y’
+SELECT *
+FROM passenger
+WHERE First LIKE ‘%y’;
+- - Find how many flights have ‘Berlin’ as destination
+SELECT COUNT(*) AS COUNT
+FROM flight
+WHERE Destination = ‘Berlin’;
+- - Find the date when flights with number ‘BBFGGGGGG5’ , ‘FT099999’ will fly
+SELECT FlightDate
+FROM flight
+WHERE Flight Number= ‘BBFGGGGGG5’ OR FlightNumber= ‘FT099999’;
+- - display the data in travel_agency table in ascending order based on agency address
+SELECT *
+FROM travel_agency
+ORDER BY AgencyAddress;
+- - Find the arrival time of flight with number ‘HT135262’
+SELECT ArrivalTime
+FROM flight
+WHERE FlightNumber= ‘HT135262’;
+- - display airline table
+SELECT * FROM airline;
+FETCHING RECORDS FROM MULTIPLE TABLES
+- - Display the flight number, flight destination, flight time, airport code, airport name, airline name and airline
+headquarters of a flight that has a destination of “London”
+SELECT f.FlightNumber, Destination, FlightTime, fa.AirportCode, AirportName,AirlineName,
+HeadquartersAddress
+FROM flight f, flight_arrival_airport fa, airport a, airline ai
+WHERE f.AirlineCode=ai.AirlineCode AND f.FlightNumber=fa.FlightNumber AND fa.AirportCode=a.AirportCode
+AND Destination=’London’;
+- - Display the first name of a passengers whose reservation has been successful along with their reservation
+details
+SELECT First, r.*
+FROM passenger p, reservation r
+WHERE p.PassengerID=r. PassengerID AND ReservationStatusID=1;
+- - Display the number of services offered by each flight and the total price of the services. Order the result by
+Highest Total Price
+SELECT f.FlightNumber, COUNT (FlightDate) AS No_Of_Services, Sum(Cost) AS Total_Price
+FROM flight f, reservation r
+WHERE r.FlightNumber= f.FlightNumber
+GROUP BY f.FlightNumber
+ORDER BY SUM(Cost) DESC;
+- - Display the reservationID, cost, flight number and flight time for the flight reservations
+SELECT ReservationID, Cost, R.FlightNumber, FlightTime
+FROM reservation R, Flight F
+WHERE R.FlightNumber= F.FlightNumber;
+- - Join query to show the first name of the passengers, flight number, cost and travel class for their flight
+reservations
+SELECT First, FlightNumber, Cost, TravelClass
+FROM passenger p, reservation r, travel_class t
+WHERE p.PassengerID=r.PassengerID AND r.TravelClassID=t.TravelClassID;
+- - Display the name of the passenger ‘ariana’ along with the flight number, cost of her reservation
+SELECT First, FlightNumber, Cost
+FROM passenger p, reservation r
+WHERE p.Passenger ID=r.PassengerID AND First= ’ariana’;
+- - Display the first name of the passenger ‘lilly’ and the details of her travel agency
+SELECT First AS PassengerName, TravelAgencyName, BookingAgentName, AgencyAddress
+FROM Passenger p, travel_agency t
+WHERE PassengerID= TPassengerID AND First = ' lilly’;
+- - Show the information of the airline along with the flight details
+SELECT FlightNumber, FlightDate, DepartureTime, AirlineName, HeadQuartersAddress
+FROM flight f, airline a
+WHERE f.AirlineCode=a.AirlineCode;
+- - Display the flight number, destination, flight date of the flight reserved on ’18-sep-21’
+SELECT ReservationDate, r.FlightNumber, Destination, FlightDate
+FROM reservation r, flight f
+WHERE r.FlightNumber=f.FlightNumber AND ReservationDate= ’18-SEP-21’;
+SUBQUERIES
+- - Flight details of the passenger named ‘Kylie’
+SELECT * FROM flight
+WHERE FlightNumber=(SELECT FlightNumber FROM reservation
+WHERE PassengerID=(SELECT PassengerID FROM passenger
+WHERE First='kylie'));
+- - Display the first names of the passengers who have booked a flight ticket in ‘first’ class
+SELECT First FROM passenger
+WHERE PassengerID=(SELECT PassengerID FROM reservation
+WHERE TravelClassID=(SELECT TravelClassID FROM travel_class
+WHERE TravelClass='first'));
+- - Display the list of passengers first names who have booked a flight with the ‘British’ airline
+SELECT First FROM passenger
+WHERE PassengerID IN(SELECT PassengerID FROM reservation
+ WHERE FlightNumber=(SELECT FlightNumber FROM flight
+ WHERE AirlineCode=(SELECT AirlineCode
+ FROM airline WHERE AirlineName='British')))
+ ORDER BY First DESC;
+- - Display the reservation status of a passenger with the first name ‘Scott’
+SELECT ReservationStatus FROM reservation_status
+WHERE ReservationStatusID =( SELECT ReservationStatusID FROM reservation
+ WHERE PassengerID=(SELECT PassengerID FROM passenger
+ WHERE First='Scott'));
+- - Display the count of passengers who has booked a flight with ‘United Airways’
+SELECT COUNT(*) AS COUNT FROM passenger
+WHERE PassengerID IN( SELECT PassengerID FROM reservation
+ WHERE FlightNumber=( SELECT FlightNumber FROM flight
+ WHERE AirlineCode=(SELECT AirlineCode
+FROM airline
+WHERE AirlineName='United Airways')));
+- - Display the first name, gender and phone number of passengers whose travel agency discount>500
+SELECT First,Gender,Phone FROM passenger
+WHERE PassengerID IN( SELECT TPassengerID FROM travel_agency
+ WHERE AgencyDiscountCode IN( SELECT AgencyDiscountCode FROM agency_discount
+ WHERE AgencyDiscountAmount>500));
+- - Calculate the number of passengers whose booking status is ‘success’
+SELECT COUNT(*) AS RESERVATION_SUCCESS_COUNT FROM passenger
+WHERE PassengerID IN(SELECT PassengerID FROM reservation
+WHERE ReservationStatusID=(SELECT PassengerID FROM reservation_status
+WHERE ReservationStatus='success'));
+- - Calculate the number of passengers who have booked an economy travel class
+SELECT COUNT(*) AS COUNT FROM passenger
+WHERE PassengerID IN( SELECT PassengerID FROM reservation
+ WHERE TravelClassID IN(SELECT TravelClassID FROM travel_class
+ WHERE TravelClass='economy'));
+- - Display the name of the airline and its headquarters address for the bookings made by passenger ‘lilly’
+SELECT AirlineName,HeadquartersAddress FROM airline
+WHERE AirlineCode=( SELECT AirlineCode FROM flight
+WHERE FlightNumber=(SELECT FlightNumber FROM reservation
+WHERE PassengerID=( SELECT PassengerID FROM passenger WHERE first='lilly')));
+- -Display first name, gender and phone number of female passengers whose reservation cost is more than
+12000
+SELECT First,Gender,Phone FROM passenger
+WHERE PassengerID IN( SELECT PassengerID FROM reservation
+ WHERE Cost>12000)AND Gender='F';
+STORED PROCEDURES
+- - User defined function to return a count of the total records inserted in the passenger table
+CREATE OR REPLACE FUNCTION totalpassenger RETURN NUMBER
+IS
+A NUMBER(2):=0;
+BEGIN
+SELECT COUNT(*) INTO A FROM passenger;
+RETURN A;
+END;
+/
+- - Stored procedure to delete a record from a passenger table
+CREATE OR REPLACE PROCEDURE
+deletepass (X passenger.PassengerID%TYPE)
+AS
+BEGIN
+DELETE FROM passenger WHERE PassengerID=X;
+END;
+/
+- - User defined function that retrives the total number of records from ‘travel_class’ table where the
+‘travelclassid’ matches ‘economy’
+CREATE OR REPLACE FUNCTION totalpassenger RETURN NUMBER
+IS
+X NUMBER(2):=0;
+BEGIN
+SELECT COUNT(*) INTO X FROM reservation
+WHERE TravelClassID IN(SELECT TravelClassID FROM travel_class WHERE
+TravelClass='economy');
+RETURN X;
+END;
+/
+- - Stored procedure to insert a new record to the passenger table
+CREATE OR REPLACE PROCEDURE insertPASSENGER(
+A passenger.PassengerID%TYPE,B passenger.First%TYPE,
+C passenger.Middle%TYPE,D passenger.Last%TYPE,
+E passenger.Gender%TYPE, F passenger.Phone%TYPE,
+G passenger.Email%TYPE,H passenger.PassengerType%TYPE)
+AS
+BEGIN
+INSERT INTO passenger(PassengerID,First,Middle,Last,Gender, Phone,Email,PassengerType)
+VALUES(A,B,C,D,E,F,G,H);
+END;
+/
+- - Stored procedure to update the reservation table
+CREATE OR REPLACE PROCEDURE updatecustomer (
+X reservation.SeatNumber%TYPE,
+Y reservation.FlightNumber%TYPE)
+AS
+BEGIN
+UPDATE reservation SET SeatNumber=X,FlightNumber=Y
+WHERE ReservationID=4;
+END;
+/
+TRIGGERS
+- - Insert the names into the pass_info table before inserting the record in the passenger table using triggers
+and display the inserted names
+CREATE TRIGGER PASSENGERNAME
+BEFORE INSERT ON passenger
+FOR EACH ROW
+BEGIN
+INSERT INTO pass_info(NAME) VALUES (:new.first);
+END;
+/
+- - Insert the name of a female passenger into the pass_info table before inserting the records in the passenger
+table using triggers and display the inserted names
+CREATE TRIGGER FEMALEPASSENGERLIST
+BEFORE INSERT ON passenger
+FOR EACH ROW
+WHEN(new.Gender='F')
+BEGIN
+INSERT INTO pass_info(NAME) VALUES(:new.First);
+END;
+/
+- - Insert the first 3 passengers first names into the pass_info table before inserting the records in the
+passenger table using triggers
+CREATE TRIGGER FIRSTNAME
+BEFORE INSERT ON passenger
+FOR EACH ROW
+DECLARE
+A NUMBER(2):=0;
+BEGIN
+SELECT COUNT(PassengerID) INTO A FROM passenger;
+IF A<3 THEN
+INSERT INTO pass_info(name) VALUES(:new.First);
+END IF;
+END;
+/
+- - Insert the first 3 passengers first names converted to uppercase into the pass_info table before inserting
+the records in the passenger table using triggers
+CREATE TRIGGER LISTFIRSTNAME
+BEFORE INSERT ON passenger
+FOR EACH ROW
+DECLARE
+X NUMBER(2):=0;
+BEGIN
+SELECT COUNT(PassengerID) INTO X FROM passenger;
+IF X<3 THEN
+INSERT INTO pass_info(name) VALUES(UPPER(:new.First));
+END IF;
+END;
+/
+- - Update the passenger first name ‘kylie’ as ‘Regina’ insert the updated first names and convert to upper case
+into the pass_info table using triggers and display the name
+CREATE TRIGGER PASSENGERNAME
+AFTER UPDATE ON passenger
+FOR EACH ROW
+BEGIN
+INSERT INTO pass_info(name) VALUES(UPPER(:new.First));
+END;
+/
+CURSORS
+- - Display all the passenger list in Ascending Order
+DECLARE
+FN passenger.First%type;
+CURSOR passengerlist IS
+SELECT First FROM passenger ORDER BY First ASC;
+BEGIN
+OPEN passengerlist;
+LOOP
+FETCH passengerlist INTO FN;
+EXIT WHEN passengerlist%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(FN);
+END LOOP;
+END;
+/
+- - Display the passenger list and reservationdate, seat number, cost information in ascending order
+DECLARE
+FN passenger.First%TYPE;
+RD reservation. ReservationDate%TYPE;
+Seat reservation.SeatNumber%TYPE;
+CInfo reservation.Cost%TYPE;
+CURSOR passengerInfo IS
+SELECT First, ReservationDate, SeatNumber, Cost
+FROM passenger p, reservation r
+WHERE p.PassengerID=r. PassengerID
+ORDER BY First ASC;
+BEGIN
+OPEN passengerInfo;
+LOOP
+FETCH passengerInfo INTO FN, RD, seat, Clnfo;
+EXIT WHEN passengerInfo%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(FN||' ‘||RD||’ ‘||seat||’ ‘||CInfo);
+END LOOP;
+END;
+/
+- - Display the passenger list and the travel class
+DECLARE
+FN passenger.First%TYPE;
+TC travel_class. TravelClass%TYPE;
+CURSOR passengerlist IS
+SELECT First, TravelClass
+FROM passenger p, reservation r, travel_class t
+WHERE p.PassengerID=r.PassengerID AND r.TravelClassID=t. TravelClassID;
+BEGIN
+OPEN passengerlist;
+LOOP
+FETCH passengerlist INTO FN, TC;
+EXIT WHEN passengerlist%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(FN||’ ‘||TC);
+END LOOP;
+END;
+/
+- - Display the passenger list and count how many first names are fetched as well
+DECLARE
+FN passenger.First%TYPE;
+C NUMBER:=0;
+CURSOR passengerlist IS
+SELECT First FROM passenger;
+BEGIN
+OPEN passengerlist;
+LOOP
+FETCH passengerlist INTO FN;
+EXIT WHEN passengerlist%NOTFOUND;
+C:=C+1;
+DBMS_OUTPUT.PUT_LINE (‘Passenger name ' ||FN);
+END LOOP;
+DBMS_OUTPUT.PUT_LINE (‘Total rows fetched is ‘||c);
+END;
+/
+- - Displays the names of passengers who have booked a ‘first’ class ticket from a passenger table
+DECLARE
+FN passenger.First%TYPE;
+CURSOR passengerlist IS
+SELECT First FROM passenger
+WHERE PassengerID=(SELECT PassengerID FROM reservation
+WHERE TravelClassID=(SELECT TravelClassID FROM Travel_class
+WHERE TravelClass=’first’));
+BEGIN
+OPEN passengerlist;
+LOOP
+FETCH passengerlist INTO FN;
+EXIT WHEN passengerlist%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE (FN);
+END LOOP;
+END;
+/
